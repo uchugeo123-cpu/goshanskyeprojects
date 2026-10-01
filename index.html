@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Летающие смайлики 🙂</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: linear-gradient(135deg, #1e1e2f 0%, #2d2b55 50%, #1e1e2f 100%);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    /* Центральная надпись поверх летящих смайликов */
+    .title {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #fff;
+      z-index: 1000;
+      pointer-events: none;
+      user-select: none;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .title h1 {
+      font-size: clamp(2rem, 6vw, 4.5rem);
+      margin-bottom: 0.5rem;
+    }
+
+    .title p {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      opacity: 0.8;
+    }
+
+    /* Смайлики */
+    .emoji {
+      position: absolute;
+      top: 0;
+      left: 0;
+      will-change: transform;
+      user-select: none;
+      pointer-events: none;
+      line-height: 1;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+    }
+  </style>
+</head>
+<body>
+  <div class="title">
+    <h1>🌍 Летающие смайлики 🚀</h1>
+    <p>Они летают по всей странице!</p>
+  </div>
+
+  <script>
+    const EMOJIS = ['😀','😂','😍','🥳','😎','🤩','😊','🙃','😉','😜',
+                    '🥰','😘','🤗','🤔','😴','🤯','😱','🥶','🤠','👻',
+                    '❤️','💖','✨','⭐','🌈','🔥','🎉','🎈','🍕','🍩',
+                    '🚀','🛸','🌍','🌙','☀️','⚡','💎','🎵','🐱','🐶'];
+
+    const COUNT = Math.min(80, Math.max(30, Math.floor(window.innerWidth / 18)));
+    const particles = [];
+    const container = document.body;
+
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function createParticle() {
+      const el = document.createElement('span');
+      el.className = 'emoji';
+      el.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+      const size = rand(20, 55); // размер шрифта в px
+      el.style.fontSize = size + 'px';
+      container.appendChild(el);
+
+      const angle = rand(0, Math.PI * 2);
+      const speed = rand(0.4, 2.2) * (size / 40 + 0.5); // крупные чуть быстрее
+
+      return {
+        el,
+        x: rand(0, window.innerWidth),
+        y: rand(0, window.innerHeight),
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        rot: rand(0, 360),
+        vrot: rand(-1.5, 1.5),
+        size,
+        wobblePhase: rand(0, Math.PI * 2),
+        wobbleAmp: rand(0.2, 0.9),
+        wobbleSpeed: rand(0.01, 0.04),
+      };
+    }
+
+    for (let i = 0; i < COUNT; i++) {
+      particles.push(createParticle());
+    }
+
+    let lastTime = performance.now();
+
+    function animate(now) {
+      const dt = Math.min((now - lastTime) / 16.67, 3); // нормализация к ~60fps
+      lastTime = now;
+
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+
+      for (const p of particles) {
+        p.wobblePhase += p.wobbleSpeed * dt;
+
+        p.x += (p.vx + Math.cos(p.wobblePhase) * p.wobbleAmp) * dt;
+        p.y += (p.vy + Math.sin(p.wobblePhase * 0.8) * p.wobbleAmp) * dt;
+        p.rot += p.vrot * dt;
+
+        const half = p.size / 2;
+
+        // Отскок от краёв экрана
+        if (p.x < -half) { p.x = -half; p.vx = Math.abs(p.vx); }
+        if (p.x > W + half) { p.x = W + half; p.vx = -Math.abs(p.vx); }
+        if (p.y < -half) { p.y = -half; p.vy = Math.abs(p.vy); }
+        if (p.y > H + half) { p.y = H + half; p.vy = -Math.abs(p.vy); }
+
+        p.el.style.transform =
+          `translate(${p.x - half}px, ${p.y - half}px) rotate(${p.rot}deg)`;
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+
+    // При изменении размера окна частицы остаются в пределах экрана
+    window.addEventListener('resize', () => {
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      for (const p of particles) {
+        p.x = Math.min(p.x, W);
+        p.y = Math.min(p.y, H);
+      }
+    });
+  </script>
+</body>
+</html>
